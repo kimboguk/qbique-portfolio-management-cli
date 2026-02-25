@@ -1,0 +1,35 @@
+{
+  "name": "@qbique/plugin-quantum",
+  "version": "0.1.0",
+  "description": "Quantum optimization engine plugin for Qbique CLI",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "oclif.manifest.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@oclif/core": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.5"
+  },
+  "oclif": {
+    "commands": "./dist/commands",
+    "topics": {
+      "optimize": {
+        "description": "Portfolio optimization (quantum engine)"
+      }
+    }
+  },
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  }
+}

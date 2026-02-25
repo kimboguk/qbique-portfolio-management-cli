@@ -1,5 +1,6 @@
 import {Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base-command.js'
+import {PluginManager} from '../../lib/plugin-manager.js'
 
 export default class OptimizeRun extends BaseCommand {
   static override description = 'Run portfolio optimization'
@@ -44,13 +45,10 @@ export default class OptimizeRun extends BaseCommand {
   async run(): Promise<void> {
     const {flags} = await this.parse(OptimizeRun)
 
-    // Check quantum engine availability
-    if (flags.engine === 'quantum') {
-      this.formatter.info(
-        'Quantum engine requires the @qbique/plugin-quantum plugin.\n' +
-        '  Install: qbique plugins install @qbique/plugin-quantum\n' +
-        '  This plugin is currently in development.',
-      )
+    // Check engine plugin availability
+    const engineCheck = PluginManager.checkEngine(flags.engine)
+    if (!engineCheck.available) {
+      this.formatter.info(engineCheck.message!)
       this.exit(0)
       return
     }
