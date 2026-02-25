@@ -1,0 +1,31 @@
+apiVersion: qbique/v1
+kind: Strategy
+metadata:
+  name: balanced-korean-equities
+  description: "균형 잡힌 한국 주식 포트폴리오 최적화 전략"
+spec:
+  optimization:
+    method: sharpe_ratio
+    framework: mvo
+    objective: sharpe_ratio
+    risk_function: volatility
+  constraints:
+    - type: budget
+      value: 1.0
+      enabled: true
+    - type: no_short
+      value: true
+      enabled: true
+    - type: max_weight
+      value: 0.15
+      enabled: true
+  parameters:
+    risk_free_rate: 0.02
+    lookback_days: 504
+    optimization_period: single
+  assets:
+    universe: all
+  backtest:
+    start_date: "2020-01-01"
+    end_date: "2025-12-31"
+    initial_capital: 100000000

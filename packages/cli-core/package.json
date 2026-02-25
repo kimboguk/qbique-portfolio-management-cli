@@ -1,0 +1,67 @@
+{
+  "name": "@qbique/cli",
+  "version": "0.1.0",
+  "description": "Qbique CLI — Portfolio optimization from the command line",
+  "author": "Qbique",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "qbique": "./bin/run.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "bin",
+    "dist",
+    "oclif.manifest.json"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "dev": "node --loader ts-node/esm ./bin/dev.js",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "@oclif/plugin-plugins": "^5",
+    "axios": "^1.7",
+    "chalk": "^5",
+    "cli-table3": "^0.6",
+    "yaml": "^2"
+  },
+  "devDependencies": {
+    "@oclif/test": "^4",
+    "@types/node": "^22",
+    "ts-node": "^10",
+    "typescript": "^5.5",
+    "vitest": "^2"
+  },
+  "oclif": {
+    "bin": "qbique",
+    "dirname": "qbique",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "auth": { "description": "Authentication commands" },
+      "config": { "description": "Configuration management" },
+      "strategy": { "description": "Strategy management" },
+      "optimize": { "description": "Portfolio optimization" },
+      "backtest": { "description": "Backtesting" },
+      "data": { "description": "Market data operations" },
+      "portfolio": { "description": "Portfolio monitoring" },
+      "rebalance": { "description": "Rebalancing management" },
+      "contract": { "description": "Contract management" },
+      "report": { "description": "Report generation" }
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
