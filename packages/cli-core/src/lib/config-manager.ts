@@ -16,6 +16,7 @@ const DEFAULT_CONFIG: QbiqueConfig = {
   defaultOutput: 'table',
   timeout: 30_000,
   profile: 'default',
+  telemetry: true,
 }
 
 function ensureConfigDir(): void {
@@ -68,8 +69,11 @@ export class ConfigManager {
           throw new Error(`Invalid timeout value: ${value}`)
         }
         break
+      case 'telemetry':
+        this.config.telemetry = value === 'true' || value === '1'
+        break
       default:
-        throw new Error(`Unknown config key: ${key}. Valid keys: endpoint, defaultOutput, timeout, profile`)
+        throw new Error(`Unknown config key: ${key}. Valid keys: endpoint, defaultOutput, timeout, profile, telemetry`)
     }
 
     this.saveConfig()

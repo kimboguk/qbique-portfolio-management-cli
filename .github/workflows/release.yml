@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ==================== npm: @qbique/cli ====================
+  publish-cli:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Install & Build
+        run: npm ci && npm run build
+        working-directory: packages/cli-core
+
+      - name: Publish @qbique/cli
+        run: npm publish --access public
+        working-directory: packages/cli-core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ==================== npm: @qbique/sdk-node ====================
+  publish-sdk-node:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Install & Build
+        run: npm install && npm run build
+        working-directory: packages/sdk-node
+
+      - name: Publish @qbique/sdk-node
+        run: npm publish --access public
+        working-directory: packages/sdk-node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ==================== PyPI: qbique ====================
+  publish-sdk-python:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build package
+        run: python -m build
+        working-directory: packages/sdk-python
+
+      - name: Publish to PyPI
+        run: twine upload dist/*
+        working-directory: packages/sdk-python
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

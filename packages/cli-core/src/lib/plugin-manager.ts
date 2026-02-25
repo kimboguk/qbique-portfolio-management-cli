@@ -2,7 +2,9 @@
  * 플러그인 관리자
  * oclif 플러그인 시스템과 연동하여 유료/무료 플러그인 관리.
  * 미설치 플러그인 접근 시 자연스러운 업셀 안내.
+ * 유료 플러그인은 LicenseManager를 통해 라이선스 검증.
  */
+import {LicenseManager} from './license-manager.js'
 
 /** 플러그인 레지스트리 — 알려진 플러그인과 기능 매핑 */
 const PLUGIN_REGISTRY: Record<string, PluginInfo> = {
@@ -99,5 +101,29 @@ export class PluginManager {
    */
   static getPluginInfo(name: string): PluginInfo | undefined {
     return PLUGIN_REGISTRY[name]
+  }
+
+  /**
+   * 플러그인이 설치되어 있고 라이선스도 유효한지 종합 확인.
+   * 설치 여부 + 라이선스 검증을 한 번에 처리.
+   */
+  static checkPluginAccess(pluginName: string): {allowed: boolean; message?: string} {
+    const plugin = PLUGIN_REGISTRY[pluginName]
+    if (!plugin) {
+      return {allowed: false, message: `Unknown plugin: ${pluginName}`}
+    }
+
+    if (plugin.tier === 'free') {
+      return {allowed: true}
+    }
+
+    const lm = new LicenseManager()
+    const result = lm.check(pluginName, plugin.tier)
+
+    if (result.status === 'valid' || result.status === 'free') {
+      return {allowed: true}
+    }
+
+    return {allowed: false, message: result.message}
   }
 }

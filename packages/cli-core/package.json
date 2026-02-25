@@ -58,7 +58,8 @@
       "portfolio": { "description": "Portfolio monitoring" },
       "rebalance": { "description": "Rebalancing management" },
       "contract": { "description": "Contract management" },
-      "report": { "description": "Report generation" }
+      "report": { "description": "Report generation" },
+      "license": { "description": "Plugin license management" }
     }
   },
   "engines": {

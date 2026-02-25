@@ -9,6 +9,7 @@ export interface QbiqueConfig {
   defaultOutput: OutputFormat
   timeout: number
   profile: string
+  telemetry: boolean
 }
 
 export interface Credentials {

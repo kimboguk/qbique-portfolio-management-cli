@@ -6,12 +6,14 @@
  * - --no-color 플래그
  * - ApiClient 자동 주입 (인증 헤더 포함)
  * - OutputFormatter 자동 주입
+ * - 텔레메트리 자동 수집 (옵트인)
  * - 표준화된 에러 핸들링
  */
 import {Command, Flags} from '@oclif/core'
 import {ConfigManager} from './config-manager.js'
 import {ApiClient} from './api-client.js'
 import {OutputFormatter} from './output-formatter.js'
+import {Telemetry} from './telemetry.js'
 import type {OutputFormat} from '../types/index.js'
 
 export abstract class BaseCommand extends Command {
@@ -30,6 +32,7 @@ export abstract class BaseCommand extends Command {
   protected configManager!: ConfigManager
   protected apiClient!: ApiClient
   protected formatter!: OutputFormatter
+  private telemetry!: Telemetry
 
   async init(): Promise<void> {
     await super.init()
@@ -37,6 +40,8 @@ export abstract class BaseCommand extends Command {
     const {flags} = await this.parse(this.constructor as typeof BaseCommand)
 
     this.configManager = new ConfigManager()
+    this.telemetry = new Telemetry(this.configManager)
+    this.telemetry.start()
 
     const outputFormat = (flags.output as OutputFormat | undefined)
       ?? this.configManager.get('defaultOutput')
@@ -44,6 +49,13 @@ export abstract class BaseCommand extends Command {
 
     this.formatter = new OutputFormatter(outputFormat)
     this.apiClient = new ApiClient(this.configManager)
+  }
+
+  async finally(_: Error | undefined): Promise<void> {
+    if (this.telemetry) {
+      const commandId = this.id ?? this.constructor.name
+      await this.telemetry.trackCommand(commandId, !_)
+    }
   }
 
   async catch(error: Error & {exitCode?: number}): Promise<void> {
