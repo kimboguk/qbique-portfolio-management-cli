@@ -1,4 +1,4 @@
-import {Args, Flags} from '@oclif/core'
+import {Flags} from '@oclif/core'
 import {BaseCommand} from '../../lib/base-command.js'
 
 export default class OptimizeRun extends BaseCommand {
@@ -6,6 +6,8 @@ export default class OptimizeRun extends BaseCommand {
 
   static override examples = [
     '<%= config.bin %> optimize run --problem-id 1',
+    '<%= config.bin %> optimize run --problem-id 1 --engine classical',
+    '<%= config.bin %> optimize run --problem-id 1 --engine quantum',
     '<%= config.bin %> optimize run --problem-id 1 --greedy',
     '<%= config.bin %> optimize run --problem-id 1 -o json',
   ]
@@ -15,6 +17,12 @@ export default class OptimizeRun extends BaseCommand {
     'problem-id': Flags.integer({
       description: 'Optimization problem ID',
       required: true,
+    }),
+    engine: Flags.string({
+      char: 'e',
+      description: 'Optimization engine (classical, quantum)',
+      options: ['classical', 'quantum'],
+      default: 'classical',
     }),
     greedy: Flags.boolean({
       description: 'Use greedy cluster optimization',
@@ -36,6 +44,17 @@ export default class OptimizeRun extends BaseCommand {
   async run(): Promise<void> {
     const {flags} = await this.parse(OptimizeRun)
 
+    // Check quantum engine availability
+    if (flags.engine === 'quantum') {
+      this.formatter.info(
+        'Quantum engine requires the @qbique/plugin-quantum plugin.\n' +
+        '  Install: qbique plugins install @qbique/plugin-quantum\n' +
+        '  This plugin is currently in development.',
+      )
+      this.exit(0)
+      return
+    }
+
     const tickers = flags.tickers?.split(',').map((t) => t.trim()) ?? null
 
     if (flags.greedy) {
@@ -51,7 +70,7 @@ export default class OptimizeRun extends BaseCommand {
     useCache: boolean,
     timeout: number,
   ): Promise<void> {
-    this.formatter.info(`Running optimization for problem #${problemId}...`)
+    this.formatter.info(`Running classical optimization for problem #${problemId}...`)
 
     const result = await this.apiClient.post<Record<string, unknown>>(
       '/api/optimization/execute',

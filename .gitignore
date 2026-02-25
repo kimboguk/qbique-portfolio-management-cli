@@ -29,6 +29,9 @@ npm-debug.log*
 # Test coverage
 coverage/
 
+# Scripts (parent repo artifacts)
+most_recent_git_module_commit_id_timestamp_log.sh
+
 # Python
 __pycache__/
 *.pyc
