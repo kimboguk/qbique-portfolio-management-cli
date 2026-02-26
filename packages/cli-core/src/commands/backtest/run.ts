@@ -10,6 +10,7 @@ export default class BacktestRun extends BaseCommand {
   static override examples = [
     '<%= config.bin %> backtest run --tickers 005930,000660 --start 2023-01-01 --end 2024-12-31',
     '<%= config.bin %> backtest run --strategy ./momentum.yaml --start 2020-01-01 --end 2024-12-31',
+    '<%= config.bin %> backtest run --strategy ./momentum.py --tickers 005930,000660 --start 2023-01-01 --end 2024-12-31',
     '<%= config.bin %> backtest run --tickers 005930,000660,035420 --start 2020-01-01 --end 2025-12-31 --schedule quarterly',
   ]
 
@@ -17,7 +18,7 @@ export default class BacktestRun extends BaseCommand {
     ...BaseCommand.baseFlags,
     strategy: Flags.string({
       char: 's',
-      description: 'Path to YAML strategy file (alternative to --tickers)',
+      description: 'Path to strategy file (.yaml, .yml, or .py)',
     }),
     tickers: Flags.string({
       description: 'Comma-separated ticker list',
@@ -119,11 +120,86 @@ export default class BacktestRun extends BaseCommand {
     }
 
     const ext = extname(filePath).toLowerCase()
-    if (ext !== '.yaml' && ext !== '.yml') {
-      this.formatter.error(`Unsupported file format: ${ext}. Use YAML (.yaml, .yml).`)
-      this.exit(1)
+
+    if (ext === '.py') {
+      return this.buildPythonStrategyRequest(filePath, flags)
     }
 
+    if (ext === '.yaml' || ext === '.yml') {
+      return this.buildYamlStrategyRequest(filePath, flags)
+    }
+
+    this.formatter.error(`Unsupported file format: ${ext}. Use .yaml, .yml, or .py`)
+    this.exit(1)
+    return {}
+  }
+
+  private async buildPythonStrategyRequest(
+    filePath: string,
+    flags: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    let raw: string
+    try {
+      raw = readFileSync(filePath, 'utf8')
+    } catch {
+      this.formatter.error(`Cannot read file: ${filePath}`)
+      this.exit(1)
+      return {}
+    }
+
+    // 클래스명 자동 감지
+    const classMatch = raw.match(/class\s+(\w+)\s*\(\s*(?:\w+\.)?BaseStrategy\s*\)/)
+    const className = classMatch?.[1] ?? null
+
+    if (!className) {
+      this.formatter.error('Could not detect BaseStrategy subclass in Python file.')
+      this.exit(1)
+      return {}
+    }
+
+    const {basename} = await import('node:path')
+    const strategyName = basename(filePath, '.py')
+
+    this.formatter.info(`Pushing Python strategy "${strategyName}" (class: ${className}) to server...`)
+
+    const pushResult = await this.apiClient.post<{
+      success: boolean
+      strategy_id?: number
+    }>('/api/cli/strategy/push', {
+      name: strategyName,
+      description: '',
+      source_file: basename(filePath),
+      strategy_type: 'python',
+      strategy_code: raw,
+      strategy_class_name: className,
+    })
+
+    // Python 전략은 반드시 --tickers가 필요 (YAML과 달리 tickers 자체 정의 없음)
+    if (!flags.tickers) {
+      this.formatter.error('Python strategy requires --tickers flag for backtest.')
+      this.exit(1)
+      return {}
+    }
+
+    const tickers = (flags.tickers as string).split(',').map((t: string) => t.trim())
+
+    return {
+      strategy_id: pushResult.strategy_id,
+      tickers,
+      start_date: flags.start,
+      end_date: flags.end,
+      schedule_type: flags.schedule,
+      calendar_freq: flags.freq,
+      drift_threshold: Number.parseFloat(flags['drift-threshold'] as string),
+      benchmark: flags.benchmark,
+      initial_capital: flags.capital,
+    }
+  }
+
+  private async buildYamlStrategyRequest(
+    filePath: string,
+    flags: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     let raw: string
     try {
       raw = readFileSync(filePath, 'utf8')
@@ -158,6 +234,7 @@ export default class BacktestRun extends BaseCommand {
     }>('/api/cli/strategy/push', {
       name: (metadata?.name as string) ?? 'backtest-strategy',
       description: (metadata?.description as string) ?? '',
+      strategy_type: 'yaml',
       strategy_yaml: raw,
       spec: {
         method: (optimization?.method as string) ?? 'sharpe_ratio',

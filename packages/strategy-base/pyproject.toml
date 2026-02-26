@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qbique-strategy"
+version = "0.1.0"
+description = "Qbique Strategy SDK — Write custom portfolio strategies in Python"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "Qbique", email = "dev@qbique.io" },
+]
+keywords = ["portfolio", "optimization", "quantitative-finance", "backtest", "strategy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "pandas>=2",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/kimboguk/qbique-portfolio-management-cli"
+Documentation = "https://github.com/kimboguk/qbique-portfolio-management-cli#readme"
+
+[tool.hatch.build.targets.wheel]
+packages = ["qbique_strategy"]
