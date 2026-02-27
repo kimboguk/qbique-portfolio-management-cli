@@ -164,3 +164,4 @@ qbique strategy show 42
 
 - [Tutorial 3: 백테스트 실행하기](03-backtest.md)
 - [Tutorial 4: 시장 데이터 활용](04-market-data.md)
+- [Tutorial 6: Python으로 커스텀 전략 만들기](06-python-strategy.md) — YAML 대신 코드로 전략 작성

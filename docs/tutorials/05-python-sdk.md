@@ -166,5 +166,6 @@ except ValidationError as e:
 
 ## 다음 단계
 
+- [Tutorial 6: Python으로 커스텀 전략 만들기](06-python-strategy.md)
 - CLI 명령어 전체 목록: [README](../../README.md)
 - 기여 가이드: [CONTRIBUTING](../../CONTRIBUTING.md)

@@ -132,3 +132,4 @@ qbique backtest report bt-a1b2c3
 
 - [Tutorial 4: 시장 데이터 활용](04-market-data.md)
 - [Tutorial 5: Python SDK로 Jupyter에서 분석하기](05-python-sdk.md)
+- [Tutorial 6: Python으로 커스텀 전략 만들기](06-python-strategy.md)
