@@ -39,7 +39,7 @@ class ConstrainedStrategy(BaseStrategy):
 def _make_prices(tickers: List[str], days: int = 60) -> pd.DataFrame:
     """테스트용 가격 데이터 생성"""
     np.random.seed(42)
-    dates = pd.bdate_range(end=date(2024, 6, 30), periods=days)
+    dates = pd.bdate_range(start=date(2024, 4, 1), periods=days)
     data = {}
     for t in tickers:
         # 간단한 랜덤 워크
