@@ -67,6 +67,8 @@ class OptimizeResource(_BaseResource):
         problem_id: int,
         *,
         engine: str = "classical",
+        universe: str = "us",
+        covariance_method: str = "standard",
         greedy: bool = False,
         tickers: list[str] | None = None,
         use_cache: bool = True,
@@ -76,12 +78,14 @@ class OptimizeResource(_BaseResource):
         if greedy:
             return self._http.post(
                 "/api/optimization/greedy-cluster",
-                json={"request_id": problem_id},
+                json={"request_id": problem_id, "universe": universe, "covariance_method": covariance_method},
             )
         return self._http.post(
             "/api/optimization/execute",
             json={
                 "problem_id": problem_id,
+                "universe": universe,
+                "covariance_method": covariance_method,
                 "asset_tickers": tickers,
                 "use_cache": use_cache,
             },

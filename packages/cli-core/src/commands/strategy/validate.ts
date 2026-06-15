@@ -100,6 +100,7 @@ export default class StrategyValidate extends BaseCommand {
     const optimization = spec?.optimization as Record<string, unknown> | undefined
     const parameters = spec?.parameters as Record<string, unknown> | undefined
     const constraints = spec?.constraints as Array<Record<string, unknown>> | undefined
+    const assets = spec?.assets as Record<string, unknown> | undefined
 
     const apiSpec = {
       name: (metadata?.name as string) ?? 'unnamed-strategy',
@@ -107,6 +108,7 @@ export default class StrategyValidate extends BaseCommand {
       framework: (optimization?.framework as string) ?? 'mvo',
       objective: (optimization?.objective as string) ?? 'sharpe_ratio',
       risk_function: (optimization?.risk_function as string) ?? 'volatility',
+      covariance_method: (optimization?.covariance_method as string) ?? 'standard',
       constraints: (constraints ?? []).map((c) => ({
         type: c.type as string,
         value: c.value ?? null,
@@ -114,6 +116,8 @@ export default class StrategyValidate extends BaseCommand {
       })),
       risk_free_rate: (parameters?.risk_free_rate as number) ?? 0.02,
       lookback_days: (parameters?.lookback_days as number) ?? 504,
+      optimization_period: (parameters?.optimization_period as string) ?? 'single',
+      asset_universe: (assets?.universe as string) ?? 'us',
     }
 
     const result = await this.apiClient.post<Record<string, unknown>>(

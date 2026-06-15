@@ -25,6 +25,17 @@ export default class OptimizeRun extends BaseCommand {
       options: ['classical', 'quantum'],
       default: 'classical',
     }),
+    universe: Flags.string({
+      char: 'u',
+      description: 'Asset universe (us, kr, all)',
+      options: ['us', 'kr', 'all'],
+      default: 'us',
+    }),
+    'covariance-method': Flags.string({
+      description: 'Covariance calculation method (standard, ledoit_wolf, downcov)',
+      options: ['standard', 'ledoit_wolf', 'downcov'],
+      default: 'standard',
+    }),
     greedy: Flags.boolean({
       description: 'Use greedy cluster optimization',
       default: false,
@@ -56,24 +67,28 @@ export default class OptimizeRun extends BaseCommand {
     const tickers = flags.tickers?.split(',').map((t) => t.trim()) ?? null
 
     if (flags.greedy) {
-      await this.runGreedy(flags['problem-id'], flags.timeout)
+      await this.runGreedy(flags['problem-id'], flags.universe, flags['covariance-method'], flags.timeout)
     } else {
-      await this.runClassical(flags['problem-id'], tickers, !flags['no-cache'], flags.timeout)
+      await this.runClassical(flags['problem-id'], tickers, flags.universe, flags['covariance-method'], !flags['no-cache'], flags.timeout)
     }
   }
 
   private async runClassical(
     problemId: number,
     tickers: string[] | null,
+    universe: string,
+    covarianceMethod: string,
     useCache: boolean,
     timeout: number,
   ): Promise<void> {
-    this.formatter.info(`Running classical optimization for problem #${problemId}...`)
+    this.formatter.info(`Running classical optimization for problem #${problemId} (universe=${universe}, covariance_method=${covarianceMethod})...`)
 
     const result = await this.apiClient.post<Record<string, unknown>>(
       '/api/optimization/execute',
       {
         problem_id: problemId,
+        universe: universe,
+        covariance_method: covarianceMethod,
         asset_tickers: tickers,
         use_cache: useCache,
       },
@@ -84,12 +99,12 @@ export default class OptimizeRun extends BaseCommand {
     this.formatter.output(result)
   }
 
-  private async runGreedy(problemId: number, timeout: number): Promise<void> {
-    this.formatter.info(`Running greedy cluster optimization for problem #${problemId}...`)
+  private async runGreedy(problemId: number, universe: string, covarianceMethod: string, timeout: number): Promise<void> {
+    this.formatter.info(`Running greedy cluster optimization for problem #${problemId} (universe=${universe}, covariance_method=${covarianceMethod})...`)
 
     const result = await this.apiClient.post<Record<string, unknown>>(
       '/api/optimization/greedy-cluster',
-      {request_id: problemId},
+      {request_id: problemId, universe: universe, covariance_method: covarianceMethod},
       {timeout: timeout * 1000},
     )
 

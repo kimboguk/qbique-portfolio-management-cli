@@ -16,6 +16,7 @@ interface StrategyYaml {
       framework?: string
       objective?: string
       risk_function?: string
+      covariance_method?: string
     }
     constraints?: Array<{type: string; value?: unknown; enabled?: boolean}>
     parameters?: {
@@ -77,6 +78,7 @@ export default class StrategyCreate extends BaseCommand {
       framework: doc.spec?.optimization?.framework ?? 'mvo',
       objective: doc.spec?.optimization?.objective ?? 'sharpe_ratio',
       risk_function: doc.spec?.optimization?.risk_function ?? 'volatility',
+      covariance_method: doc.spec?.optimization?.covariance_method ?? 'standard',
       constraints: (doc.spec?.constraints ?? []).map((c) => ({
         type: c.type,
         value: c.value ?? null,
@@ -85,7 +87,7 @@ export default class StrategyCreate extends BaseCommand {
       risk_free_rate: doc.spec?.parameters?.risk_free_rate ?? 0.02,
       lookback_days: doc.spec?.parameters?.lookback_days ?? 504,
       optimization_period: doc.spec?.parameters?.optimization_period ?? 'single',
-      asset_universe: doc.spec?.assets?.universe ?? 'all',
+      asset_universe: doc.spec?.assets?.universe ?? 'us',
       tickers: doc.spec?.assets?.tickers ?? null,
     }
 
