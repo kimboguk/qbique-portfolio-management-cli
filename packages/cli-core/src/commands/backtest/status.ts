@@ -19,9 +19,7 @@ export default class BacktestStatus extends BaseCommand {
   async run(): Promise<void> {
     const {args} = await this.parse(BacktestStatus)
 
-    const result = await this.apiClient.get<Record<string, unknown>>(
-      `/api/backtest/status/${args.id}`,
-    )
+    const result = await this.sdkClient.backtest.status(args.id)
 
     this.formatter.output(result)
   }

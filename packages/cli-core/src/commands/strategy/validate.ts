@@ -120,10 +120,7 @@ export default class StrategyValidate extends BaseCommand {
       asset_universe: (assets?.universe as string) ?? 'us',
     }
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/cli/strategy/validate',
-      apiSpec,
-    )
+    const result = await this.sdkClient.strategy.validate(apiSpec)
 
     const resultData = result as {success?: boolean; error?: {details?: string[]}}
     if (resultData.success) {

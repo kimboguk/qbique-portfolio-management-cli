@@ -17,18 +17,17 @@ export default class StrategyList extends BaseCommand {
   ]
 
   async run(): Promise<void> {
-    const result = await this.apiClient.get<{
-      success: boolean
-      methods: MethodInfo[]
-    }>('/api/optimization/methods')
+    const result = await this.sdkClient.strategy.list()
+    const data = result as Record<string, unknown>
+    const methods = (data.data as MethodInfo[]) ?? []
 
-    if (!result.methods || result.methods.length === 0) {
+    if (!methods || methods.length === 0) {
       this.formatter.info('No optimization methods available.')
       return
     }
 
     this.formatter.outputTable(
-      result.methods.map((m) => ({
+      methods.map((m) => ({
         id: m.id,
         name: m.name,
         description: m.description,

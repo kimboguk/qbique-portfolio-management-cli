@@ -19,9 +19,7 @@ export default class StrategyShow extends BaseCommand {
   async run(): Promise<void> {
     const {args} = await this.parse(StrategyShow)
 
-    const problem = await this.apiClient.get<Record<string, unknown>>(
-      `/api/onboarding/problem/${args.id}`,
-    )
+    const problem = await this.sdkClient.strategy.show(args.id)
 
     this.formatter.output(problem)
   }

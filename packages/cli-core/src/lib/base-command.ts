@@ -10,6 +10,7 @@
  * - 표준화된 에러 핸들링
  */
 import {Command, Flags} from '@oclif/core'
+import {QbiqueClient} from '@qbique/sdk-node'
 import {ConfigManager} from './config-manager.js'
 import {ApiClient} from './api-client.js'
 import {OutputFormatter} from './output-formatter.js'
@@ -31,6 +32,7 @@ export abstract class BaseCommand extends Command {
 
   protected configManager!: ConfigManager
   protected apiClient!: ApiClient
+  protected sdkClient!: QbiqueClient
   protected formatter!: OutputFormatter
   private telemetry!: Telemetry
 
@@ -49,6 +51,11 @@ export abstract class BaseCommand extends Command {
 
     this.formatter = new OutputFormatter(outputFormat)
     this.apiClient = new ApiClient(this.configManager)
+
+    // Initialize SDK client with config
+    const endpoint = this.configManager.get('endpoint') ?? 'http://localhost:8001'
+    const apiKey = this.configManager.getApiKey() ?? ''
+    this.sdkClient = new QbiqueClient({endpoint, apiKey})
   }
 
   async finally(_: Error | undefined): Promise<void> {

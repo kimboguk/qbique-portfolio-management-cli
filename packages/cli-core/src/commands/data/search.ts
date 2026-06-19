@@ -19,10 +19,7 @@ export default class DataSearch extends BaseCommand {
   async run(): Promise<void> {
     const {args} = await this.parse(DataSearch)
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/optimization/search-tickers',
-      {query: args.query},
-    )
+    const result = await this.sdkClient.data.search(args.query)
 
     this.formatter.output(result)
   }

@@ -83,17 +83,12 @@ export default class OptimizeRun extends BaseCommand {
   ): Promise<void> {
     this.formatter.info(`Running classical optimization for problem #${problemId} (universe=${universe}, covariance_method=${covarianceMethod})...`)
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/optimization/execute',
-      {
-        problem_id: problemId,
-        universe: universe,
-        covariance_method: covarianceMethod,
-        asset_tickers: tickers,
-        use_cache: useCache,
-      },
-      {timeout: timeout * 1000},
-    )
+    const result = await this.sdkClient.optimize.run({
+      problemId,
+      tickers: tickers ?? undefined,
+      useCache,
+      timeout,
+    })
 
     this.formatter.success('Optimization completed')
     this.formatter.output(result)
@@ -102,11 +97,11 @@ export default class OptimizeRun extends BaseCommand {
   private async runGreedy(problemId: number, universe: string, covarianceMethod: string, timeout: number): Promise<void> {
     this.formatter.info(`Running greedy cluster optimization for problem #${problemId} (universe=${universe}, covariance_method=${covarianceMethod})...`)
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/optimization/greedy-cluster',
-      {request_id: problemId, universe: universe, covariance_method: covarianceMethod},
-      {timeout: timeout * 1000},
-    )
+    const result = await this.sdkClient.optimize.run({
+      problemId,
+      greedy: true,
+      timeout,
+    })
 
     this.formatter.success('Greedy optimization completed')
     this.formatter.output(result)

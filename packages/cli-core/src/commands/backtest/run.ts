@@ -80,17 +80,22 @@ export default class BacktestRun extends BaseCommand {
     const tickerCount = (request.tickers as string[])?.length ?? 'strategy-defined'
     this.formatter.info(`Starting backtest with ${tickerCount} tickers (${flags.start} ~ ${flags.end})...`)
 
-    const result = await this.apiClient.post<{
-      job_id: string
-      status: string
-      message?: string
-    }>('/api/backtest/run', request)
+    const result = await this.sdkClient.backtest.run({
+      tickers: request.tickers as string[],
+      start: request.start_date as string,
+      end: request.end_date as string,
+      schedule: request.schedule_type as string | undefined,
+      freq: request.calendar_freq as string | undefined,
+      driftThreshold: request.drift_threshold as number | undefined,
+      benchmark: request.benchmark as string | undefined,
+      capital: request.initial_capital as number | undefined,
+    })
 
-    const jobId = result.job_id
+    const jobId = (result as Record<string, unknown>).job_id as string
 
     if (!flags.wait) {
       this.formatter.success(`Backtest submitted: ${jobId}`)
-      this.formatter.output({job_id: jobId, status: result.status})
+      this.formatter.output({job_id: jobId, status: (result as Record<string, unknown>).status})
       return
     }
 
@@ -162,16 +167,15 @@ export default class BacktestRun extends BaseCommand {
 
     this.formatter.info(`Pushing Python strategy "${strategyName}" (class: ${className}) to server...`)
 
-    const pushResult = await this.apiClient.post<{
-      success: boolean
-      strategy_id?: number
-    }>('/api/cli/strategy/push', {
+    const pushResult = await this.sdkClient.strategy.push({
       name: strategyName,
+      strategyYaml: raw,
+      spec: {
+        strategy_type: 'python',
+        strategy_class_name: className,
+        source_file: basename(filePath),
+      },
       description: '',
-      source_file: basename(filePath),
-      strategy_type: 'python',
-      strategy_code: raw,
-      strategy_class_name: className,
     })
 
     // Python 전략은 반드시 --tickers가 필요 (YAML과 달리 tickers 자체 정의 없음)
@@ -182,9 +186,10 @@ export default class BacktestRun extends BaseCommand {
     }
 
     const tickers = (flags.tickers as string).split(',').map((t: string) => t.trim())
+    const pushData = pushResult as Record<string, unknown>
 
     return {
-      strategy_id: pushResult.strategy_id,
+      strategy_id: pushData.strategy_id,
       tickers,
       start_date: flags.start,
       end_date: flags.end,
@@ -228,14 +233,9 @@ export default class BacktestRun extends BaseCommand {
 
     this.formatter.info(`Pushing strategy "${metadata?.name ?? 'unnamed'}" to server...`)
 
-    const pushResult = await this.apiClient.post<{
-      success: boolean
-      strategy_id?: number
-    }>('/api/cli/strategy/push', {
+    const pushResult = await this.sdkClient.strategy.push({
       name: (metadata?.name as string) ?? 'backtest-strategy',
-      description: (metadata?.description as string) ?? '',
-      strategy_type: 'yaml',
-      strategy_yaml: raw,
+      strategyYaml: raw,
       spec: {
         method: (optimization?.method as string) ?? 'sharpe_ratio',
         framework: (optimization?.framework as string) ?? 'mvo',
@@ -252,15 +252,17 @@ export default class BacktestRun extends BaseCommand {
         asset_universe: (assets?.universe as string) ?? 'all',
         tickers: (assets?.tickers as string[]) ?? null,
       },
+      description: (metadata?.description as string) ?? '',
     })
 
     // Build backtest request using pushed strategy's tickers or overridden tickers
     const tickers = flags.tickers
       ? (flags.tickers as string).split(',').map((t: string) => t.trim())
       : (assets?.tickers as string[]) ?? []
+    const pushData = pushResult as Record<string, unknown>
 
     return {
-      strategy_id: pushResult.strategy_id,
+      strategy_id: pushData.strategy_id,
       tickers,
       start_date: flags.start,
       end_date: flags.end,
@@ -279,19 +281,13 @@ export default class BacktestRun extends BaseCommand {
     const pollInterval = 2000
 
     while (Date.now() < deadline) {
-      const status = await this.apiClient.get<{
-        job_id: string
-        status: string
-        progress?: number
-        message?: string
-      }>(`/api/backtest/status/${jobId}`)
+      const statusResult = await this.sdkClient.backtest.status(jobId)
+      const status = statusResult as Record<string, unknown>
 
       if (status.status === 'completed') {
         process.stderr.write('\n')
         this.formatter.success('Backtest completed')
-        const results = await this.apiClient.get<Record<string, unknown>>(
-          `/api/backtest/results/${jobId}`,
-        )
+        const results = await this.sdkClient.backtest.results(jobId)
         this.formatter.output(results)
         return
       }

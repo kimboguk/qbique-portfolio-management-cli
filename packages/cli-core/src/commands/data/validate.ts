@@ -21,10 +21,7 @@ export default class DataValidate extends BaseCommand {
 
     const tickers = args.tickers.split(',').map((t) => t.trim())
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/optimization/validate-tickers',
-      {tickers},
-    )
+    const result = await this.sdkClient.data.validate(tickers)
 
     this.formatter.output(result)
   }

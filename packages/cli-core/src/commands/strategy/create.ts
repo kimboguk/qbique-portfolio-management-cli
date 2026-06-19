@@ -93,10 +93,7 @@ export default class StrategyCreate extends BaseCommand {
 
     this.formatter.info(`Creating strategy "${spec.name}"...`)
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/cli/strategy/create',
-      spec,
-    )
+    const result = await this.sdkClient.strategy.create(spec)
 
     this.formatter.success(`Strategy created successfully`)
     this.formatter.output(result)

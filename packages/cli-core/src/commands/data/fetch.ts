@@ -50,10 +50,12 @@ export default class DataFetch extends BaseCommand {
     const label = flags.universe ?? flags.tickers
     this.formatter.info(`Fetching market data for ${label}...`)
 
-    const result = await this.apiClient.post<Record<string, unknown>>(
-      '/api/cli/data/fetch',
-      params,
-    )
+    const result = await this.sdkClient.data.fetch({
+      universe: params.universe as string | undefined,
+      tickers: params.tickers as string[] | undefined,
+      startDate: params.start_date as string | undefined,
+      endDate: params.end_date as string | undefined,
+    })
 
     if (flags.save) {
       const outputPath = resolve(flags.save)
