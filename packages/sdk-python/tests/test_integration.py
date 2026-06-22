@@ -76,3 +76,27 @@ def test_strategy_list(client):
 def test_data_validate(client):
     """data.validate -> POST /api/optimization/validate-tickers."""
     assert isinstance(client.data.validate(["AAPL", "MSFT"]), dict)
+
+
+# --- web-parity strategy backtest (greedy) --------------------------------
+
+def test_backtest_available_range(client):
+    """backtest.available_range -> GET /api/backtest/strategy/available-range."""
+    assert isinstance(client.backtest.available_range(), dict)
+
+
+def test_backtest_strategy_submit(client):
+    """backtest.strategy -> POST /api/backtest/strategy/greedy.
+
+    Submit only (no completion poll — greedy backtests take ~1min). Asserts a
+    job descriptor comes back, which proves the web-parity wiring is correct.
+    """
+    job = client.backtest.strategy(
+        start="2023-01-01",
+        end="2023-06-30",
+        portfolio_strategy="risk_parity",
+        rebalance_freq="monthly",
+        universe="US",
+    )
+    assert isinstance(job, dict)
+    assert job.get("job_id")

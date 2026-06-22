@@ -122,7 +122,12 @@ class BacktestResource(_BaseResource):
         benchmark: str = "KOSPI",
         capital: int = 100_000_000,
     ) -> dict:
-        """Run a portfolio backtest."""
+        """Run a simple ticker-only backtest (legacy / quick smoke).
+
+        Uses fixed default weighting with explicit tickers. For web-app-parity
+        backtests (strategy method, greedy selection, regime, universe), use
+        :meth:`strategy` instead.
+        """
         return self._http.post("/api/backtest/run", json={
             "tickers": tickers,
             "start_date": start,
@@ -134,12 +139,101 @@ class BacktestResource(_BaseResource):
             "initial_capital": capital,
         })
 
+    def strategy(
+        self,
+        *,
+        start: str,
+        end: str,
+        portfolio_strategy: str = "max_sharpe",
+        rebalance_freq: str = "quarterly",
+        universe: str = "ALL",
+        initial_capital: float = 100_000_000,
+        k_max_per_cluster: int | None = None,
+        improvement_threshold: float = 0.01,
+        expected_return_method: str = "bayes_stein",
+        covariance_method: str = "sample",
+        lookback_days: int | None = None,
+        cov_lookback_days: int | None = None,
+        benchmarks: list[str] | None = None,
+        regime_enabled: bool = False,
+        regime_method: str | None = None,
+        credit_spread_enabled: bool = False,
+        credit_spread_threshold: float | None = None,
+        credit_spread_mode: str | None = None,
+        stop_loss_enabled: bool = False,
+        stop_loss_threshold: float = 0.20,
+        evaluation_method: str = "share_based",
+        use_realistic_pricing: bool = False,
+    ) -> dict:
+        """Run a web-app-parity strategy backtest (greedy cluster selection).
+
+        Mirrors the platform web app backtest:
+        ``POST /api/backtest/strategy/greedy`` (GreedyBacktestRequest).
+
+        ``portfolio_strategy`` accepts max_sharpe | risk_parity | hrp |
+        min_variance | equal_weight. Returns a job descriptor; poll
+        :meth:`strategy_status` and fetch :meth:`strategy_result`.
+
+        Example (RP, monthly, US, 2023-2025)::
+
+            client.backtest.strategy(
+                start="2023-01-01", end="2025-12-31",
+                portfolio_strategy="risk_parity",
+                rebalance_freq="monthly", universe="US",
+            )
+        """
+        payload: dict = {
+            "start_date": start,
+            "end_date": end,
+            "portfolio_strategy": portfolio_strategy,
+            "rebalance_freq": rebalance_freq,
+            "universe": universe,
+            "initial_capital": initial_capital,
+            "improvement_threshold": improvement_threshold,
+            "expected_return_method": expected_return_method,
+            "covariance_method": covariance_method,
+            "regime_enabled": regime_enabled,
+            "credit_spread_enabled": credit_spread_enabled,
+            "stop_loss_enabled": stop_loss_enabled,
+            "stop_loss_threshold": stop_loss_threshold,
+            "evaluation_method": evaluation_method,
+            "use_realistic_pricing": use_realistic_pricing,
+        }
+        # optional fields — send only when set so server defaults apply
+        if k_max_per_cluster is not None:
+            payload["k_max_per_cluster"] = k_max_per_cluster
+        if lookback_days is not None:
+            payload["lookback_days"] = lookback_days
+        if cov_lookback_days is not None:
+            payload["cov_lookback_days"] = cov_lookback_days
+        if benchmarks is not None:
+            payload["benchmarks"] = benchmarks
+        if regime_method is not None:
+            payload["regime_method"] = regime_method
+        if credit_spread_threshold is not None:
+            payload["credit_spread_threshold"] = credit_spread_threshold
+        if credit_spread_mode is not None:
+            payload["credit_spread_mode"] = credit_spread_mode
+        return self._http.post("/api/backtest/strategy/greedy", json=payload)
+
+    def strategy_status(self, job_id: str) -> dict:
+        """Check a strategy (greedy) backtest job status."""
+        return self._http.get(f"/api/backtest/strategy/greedy/{job_id}")
+
+    def strategy_result(self, job_id: str) -> dict:
+        """Fetch a completed strategy (greedy) backtest result."""
+        return self._http.get(f"/api/backtest/strategy/greedy/{job_id}/result")
+
+    def available_range(self) -> dict:
+        """Available date range for strategy backtests."""
+        return self._http.get("/api/backtest/strategy/available-range")
+
     def status(self, job_id: str) -> dict:
-        """Check backtest job status."""
+        """Check backtest job status (simple ticker-only run)."""
         return self._http.get(f"/api/backtest/status/{job_id}")
 
     def results(self, job_id: str) -> dict:
-        """Get backtest results."""
+        """Get backtest results (simple ticker-only run)."""
         return self._http.get(f"/api/backtest/results/{job_id}")
 
     def compare(self, id_a: str, id_b: str) -> dict:

@@ -12,6 +12,7 @@ import {HttpClient} from './http-client.js'
 import type {
   QbiqueClientOptions,
   BacktestRunOptions,
+  BacktestStrategyOptions,
   OptimizeRunOptions,
   DataFetchOptions,
   DataExportOptions,
@@ -86,6 +87,11 @@ class OptimizeResource {
 class BacktestResource {
   constructor(private http: HttpClient) {}
 
+  /**
+   * Simple ticker-only backtest (legacy / quick smoke). Fixed default
+   * weighting with explicit tickers. For web-app-parity backtests
+   * (strategy method, greedy selection, regime, universe), use strategy().
+   */
   async run(options: BacktestRunOptions) {
     return this.http.post('/api/backtest/run', {
       tickers: options.tickers,
@@ -97,6 +103,53 @@ class BacktestResource {
       benchmark: options.benchmark ?? 'KOSPI',
       initial_capital: options.capital ?? 100_000_000,
     })
+  }
+
+  /**
+   * Web-app-parity strategy backtest (greedy cluster selection).
+   * POST /api/backtest/strategy/greedy. portfolioStrategy accepts
+   * max_sharpe | risk_parity | hrp | min_variance | equal_weight.
+   * Returns a job descriptor; poll strategyStatus() and fetch strategyResult().
+   */
+  async strategy(options: BacktestStrategyOptions) {
+    const body: Record<string, unknown> = {
+      start_date: options.start,
+      end_date: options.end,
+      portfolio_strategy: options.portfolioStrategy ?? 'max_sharpe',
+      rebalance_freq: options.rebalanceFreq ?? 'quarterly',
+      universe: options.universe ?? 'ALL',
+      initial_capital: options.initialCapital ?? 100_000_000,
+      improvement_threshold: options.improvementThreshold ?? 0.01,
+      expected_return_method: options.expectedReturnMethod ?? 'bayes_stein',
+      covariance_method: options.covarianceMethod ?? 'sample',
+      regime_enabled: options.regimeEnabled ?? false,
+      credit_spread_enabled: options.creditSpreadEnabled ?? false,
+      stop_loss_enabled: options.stopLossEnabled ?? false,
+      stop_loss_threshold: options.stopLossThreshold ?? 0.2,
+      evaluation_method: options.evaluationMethod ?? 'share_based',
+      use_realistic_pricing: options.useRealisticPricing ?? false,
+    }
+    // optional fields — send only when set so server defaults apply
+    if (options.kMaxPerCluster !== undefined) body.k_max_per_cluster = options.kMaxPerCluster
+    if (options.lookbackDays !== undefined) body.lookback_days = options.lookbackDays
+    if (options.covLookbackDays !== undefined) body.cov_lookback_days = options.covLookbackDays
+    if (options.benchmarks !== undefined) body.benchmarks = options.benchmarks
+    if (options.regimeMethod !== undefined) body.regime_method = options.regimeMethod
+    if (options.creditSpreadThreshold !== undefined) body.credit_spread_threshold = options.creditSpreadThreshold
+    if (options.creditSpreadMode !== undefined) body.credit_spread_mode = options.creditSpreadMode
+    return this.http.post('/api/backtest/strategy/greedy', body)
+  }
+
+  async strategyStatus(jobId: string) {
+    return this.http.get(`/api/backtest/strategy/greedy/${jobId}`)
+  }
+
+  async strategyResult(jobId: string) {
+    return this.http.get(`/api/backtest/strategy/greedy/${jobId}/result`)
+  }
+
+  async availableRange() {
+    return this.http.get('/api/backtest/strategy/available-range')
   }
 
   async status(jobId: string) {
