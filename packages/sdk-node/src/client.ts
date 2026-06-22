@@ -71,7 +71,8 @@ class OptimizeResource {
   }
 
   async status(jobId: string) {
-    return this.http.get(`/api/optimization/status/${jobId}`)
+    // /execute is synchronous; retrieve the persisted result by id.
+    return this.http.get(`/api/optimization/result/${jobId}`)
   }
 
   async frontier(requestId: string, nPoints = 50) {
@@ -163,11 +164,11 @@ class HealthResource {
   constructor(private http: HttpClient) {}
 
   async check() {
-    return this.http.get('/api/health')
+    return this.http.get('/health')
   }
 
   async version() {
-    return this.http.get('/api/version')
+    return this.http.get('/api/version/current')
   }
 }
 

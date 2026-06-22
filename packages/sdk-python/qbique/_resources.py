@@ -92,8 +92,12 @@ class OptimizeResource(_BaseResource):
         )
 
     def status(self, job_id: str) -> dict:
-        """Check optimization job status."""
-        return self._http.get(f"/api/optimization/status/{job_id}")
+        """Fetch a stored optimization result.
+
+        Note: /execute is synchronous (returns the result inline), so there is
+        no separate job-status endpoint. This retrieves the persisted result by id.
+        """
+        return self._http.get(f"/api/optimization/result/{job_id}")
 
     def frontier(self, request_id: str, *, n_points: int = 50) -> dict:
         """Get efficient frontier."""
@@ -230,11 +234,11 @@ class ContractResource(_BaseResource):
 
     def list(self) -> dict:
         """List contracts."""
-        return self._http.get("/api/contracts")
+        return self._http.get("/api/contracts/list")
 
     def status(self, contract_id: str) -> dict:
         """Check contract status."""
-        return self._http.get(f"/api/contracts/{contract_id}")
+        return self._http.get(f"/api/contracts/{contract_id}/status")
 
 
 class HealthResource(_BaseResource):
@@ -242,8 +246,8 @@ class HealthResource(_BaseResource):
 
     def check(self) -> dict:
         """Check backend health."""
-        return self._http.get("/api/health")
+        return self._http.get("/health")
 
     def version(self) -> dict:
         """Get server version."""
-        return self._http.get("/api/version")
+        return self._http.get("/api/version/current")
