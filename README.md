@@ -23,8 +23,12 @@ qbique strategy create -f strategy.yaml
 # Run optimization
 qbique optimize run --problem-id 1
 
-# Run backtest
+# Run backtest (legacy, ticker-only)
 qbique backtest run --tickers 005930,000660 --start 2023-01-01 --end 2024-12-31
+
+# Run web-parity backtest (greedy selection: RP/EW/MV/MS/HRP, universe, regime)
+qbique backtest strategy --start 2023-01-01 --end 2024-12-31 \
+  --strategy-method risk_parity --rebalance-freq monthly --universe US
 
 # Fetch market data
 qbique data fetch --universe KOSPI --from 2024-01-01
@@ -64,8 +68,9 @@ qbique data fetch --universe KOSPI --from 2024-01-01
 - `qbique optimize frontier <request-id>` — Get efficient frontier
 
 ### Backtesting
-- `qbique backtest run --tickers ... --start ... --end ...` — Run backtest
+- `qbique backtest run --tickers ... --start ... --end ...` — Run backtest (legacy, ticker-only)
 - `qbique backtest run --strategy ./momentum.yaml --start ... --end ...` — Strategy file backtest
+- `qbique backtest strategy --start ... --end ... --strategy-method risk_parity --universe US` — **Web-parity** greedy backtest (portfolio method RP/EW/MV/MS/HRP, universe, regime, covariance, stop-loss). See [Tutorial 3](docs/tutorials/03-backtest.md)
 - `qbique backtest status <job-id>` — Check status
 - `qbique backtest results <job-id>` — Get results
 - `qbique backtest compare <id-a> <id-b>` — Compare two backtests

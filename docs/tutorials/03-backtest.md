@@ -38,6 +38,65 @@ qbique backtest run \
 
 전략 파일에 정의된 종목, 최적화 방법, 리밸런싱 규칙이 모두 적용됩니다.
 
+## ⭐ 웹 앱 동일 방식 백테스트 — `backtest strategy`
+
+위 `backtest run`은 종목을 직접 주는 단순(legacy) 경로입니다. **웹 플랫폼과 똑같은 백테스트**(greedy 클러스터 자산 선택 + 5종 비중 방식 + 유니버스/레짐/공분산/손절)를 재현하려면 `backtest strategy`를 씁니다. 종목을 나열하지 않고 **전략·유니버스·기간만** 지정하면 엔진이 자산 선택부터 수행합니다.
+
+```bash
+qbique backtest strategy \
+  --start 2023-01-01 --end 2024-12-31 \
+  --strategy-method risk_parity \
+  --rebalance-freq monthly \
+  --universe US
+```
+
+```
+Submitting risk_parity backtest (US, monthly, 2023-01-01 ~ 2024-12-31)...
+Backtest job: a6c770a3-... — polling for results...
+✓ Backtest completed
+  total_return: 19.9%   annualized: ...   sharpe: 1.90   max_drawdown: -7.6%
+```
+
+### 주요 플래그
+
+| 플래그 | 값 | 기본값 |
+|---|---|---|
+| `--strategy-method` | `max_sharpe` \| `risk_parity` \| `hrp` \| `min_variance` \| `equal_weight` | `max_sharpe` |
+| `--rebalance-freq` | `monthly` \| `quarterly` \| `semi_annual` \| `annual` \| `weekly` | `monthly` |
+| `--universe` | `US` \| `ALL` | `US` |
+| `--cov-method` | `sample` \| `ledoit_wolf` | `sample` |
+| `--expected-return-method` | 기대수익 추정기 | `bayes_stein` |
+| `--lookback-days` / `--cov-lookback-days` | 수익/공분산 룩백(일) | 엔진 기본 |
+| `--k-max-per-cluster` | 클러스터당 최대 선택 종목 | 엔진 기본 |
+| `--regime` / `--regime-method` | 레짐 스위칭 on + 방법 | off |
+| `--credit-spread` | 신용스프레드 채권 대피 on | off |
+| `--stop-loss` / `--stop-loss-threshold` | 손절 on + 임계(비율) | off / 0.20 |
+| `--eval-method` | `share_based` \| `weight_based` | `share_based` |
+| `--realistic-pricing` | open-진입/close-청산 가격 | off |
+| `--benchmarks` | 쉼표구분 벤치(예 `SPY,QQQ`) | 엔진 기본 |
+| `--capital` | 초기 자본 | 100000000 |
+
+### 예시 — Ledoit-Wolf 공분산 + 균등배분, 전 기간
+
+```bash
+qbique backtest strategy \
+  --start 2010-01-01 --end 2025-12-31 \
+  --strategy-method equal_weight \
+  --universe US --cov-method ledoit_wolf
+```
+
+### 동기/비동기
+
+greedy 백테스트는 ~1분 걸립니다. 기본은 `--wait`(완료까지 폴링 후 결과 출력)입니다. 즉시 반환만 원하면 `--no-wait`로 `job_id`만 받습니다.
+
+```bash
+qbique backtest strategy --start 2023-01-01 --end 2023-12-31 \
+  --strategy-method risk_parity --universe US --no-wait
+# → job_id 반환 (재조회는 --wait 사용 권장)
+```
+
+> 참고: `backtest status`/`results` 커맨드는 legacy `backtest run` 전용입니다. `backtest strategy`는 `--wait`(기본)로 완료 결과를 받으세요.
+
 ## 3. 리밸런싱 옵션
 
 ### 캘린더 기반 (기본값)
