@@ -22,9 +22,14 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies
+      # cli-core imports @qbique/sdk-node (workspace sibling). Install at the
+      # repo root so npm workspaces links it, and build the SDK first so its
+      # dist/ (types + js) exists for cli-core's tsc/build.
+      - name: Install dependencies (workspace root)
         run: npm install
-        working-directory: packages/cli-core
+
+      - name: Build SDK dependency
+        run: npm run build --workspace @qbique/sdk-node
 
       - name: TypeScript lint
         run: npx tsc --noEmit
