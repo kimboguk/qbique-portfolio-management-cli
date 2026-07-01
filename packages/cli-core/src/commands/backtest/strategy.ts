@@ -130,8 +130,10 @@ export default class BacktestStrategy extends BaseCommand {
       if (status.status === 'completed') {
         process.stderr.write('\n')
         this.formatter.success('Backtest completed')
-        const results = await this.sdkClient.backtest.strategyResult(jobId)
-        this.formatter.output(results)
+        const results = (await this.sdkClient.backtest.strategyResult(jobId)) as Record<string, unknown>
+        // 시계열(portfolio_values/benchmark_values)은 방대하므로 요약 지표만 출력.
+        // 전체 시계열/리포트는 `qbique backtest report`로.
+        this.formatter.output(BacktestStrategy.summarize(results))
         return
       }
 
@@ -155,5 +157,29 @@ export default class BacktestStrategy extends BaseCommand {
       `Backtest timed out after ${timeoutSec}s. Check status with: qbique backtest status ${jobId}`,
     )
     this.exit(1)
+  }
+
+  /** Concise metrics view — drops the heavy portfolio_values/benchmark_values series. */
+  private static summarize(r: Record<string, unknown>): Record<string, unknown> {
+    const pct = (x: unknown) => (typeof x === 'number' ? `${(x * 100).toFixed(2)}%` : '—')
+    const num = (x: unknown, d = 2) => (typeof x === 'number' ? x.toFixed(d) : '—')
+    const out: Record<string, unknown> = {
+      period: `${r.start_date ?? '?'} ~ ${r.end_date ?? '?'}`,
+      total_return: pct(r.total_return),
+      annualized_return: pct(r.annualized_return),
+      annual_volatility: pct(r.annual_volatility),
+      sharpe_ratio: num(r.sharpe_ratio),
+      max_drawdown: pct(r.max_drawdown),
+      total_rebalances: r.total_rebalances ?? '—',
+      total_turnover: pct(r.total_turnover),
+      final_value: typeof r.final_value === 'number' ? Math.round(r.final_value).toLocaleString() : '—',
+    }
+    if (r.benchmark_total_return != null || r.alpha != null) {
+      out.benchmark = r.alpha_benchmark ?? 'benchmark'
+      out.benchmark_total_return = pct(r.benchmark_total_return)
+      out.benchmark_sharpe = num(r.benchmark_sharpe)
+      out.alpha = pct(r.alpha)
+    }
+    return out
   }
 }
